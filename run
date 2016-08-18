@@ -1,0 +1,55 @@
+#!/usr/bin/env ruby
+
+require 'octokit'
+require 'optparse'
+
+ERR_DODGY_ARGS=1
+
+GH_USER  = ENV.fetch('GH_USER')
+GH_TOKEN = ENV.fetch('GH_TOKEN')
+
+github = Octokit::Client.new login: GH_USER,
+                             password: GH_TOKEN
+
+file = nil
+pr = nil
+repo = nil
+
+OptionParser.new do |opts|
+  opts.banner = "Usage: #{$0} [options]"
+
+  opts.on('-f', '--file f', 'Body file') do |o|
+    file = o
+  end
+
+  opts.on('-p', '--pr PR', 'PR to post to') do |o|
+    pr = o
+  end
+
+  opts.on('-r', '--repo REPO', 'REPO to post to') do |o|
+    repo = o
+  end
+
+
+end.parse!
+
+err = []
+if file.nil?
+  err << 'Missing argument -f'
+end
+
+if pr.nil?
+  err << 'Missing argument -p'
+end
+
+if repo.nil?
+  err << 'Missing argument -r'
+end
+
+unless err.empty?
+  puts err.join("\n")
+  exit ERR_DODGY_ARGS
+end
+
+body = File.read(file)
+github.add_comment repo, pr.to_i, body
